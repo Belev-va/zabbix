@@ -1,0 +1,43 @@
+version: '3.5'
+
+services:
+  zabbix-server:
+    image: zabbix/zabbix-server-pgsql:latest
+    restart: always
+    environment:
+      - DB_SERVER_HOST=zabbix-db
+      - POSTGRES_USER=zabbix
+      - POSTGRES_PASSWORD=zabbix
+      - ZBX_LOGFILE=/tmp/zabbix_server.log
+    volumes:
+      - ./zabbix_alertscripts:/usr/lib/zabbix/alertscripts  # Скрипты алертов
+      - ./zabbix_config:/etc/zabbix  # Конфигурационные файлы
+      - ./zabbix_config/zabbix_server.conf:/etc/zabbix/zabbix_server.conf
+    depends_on:
+      - zabbix-db
+    ports:
+      - "10051:10051"
+  zabbix-web:
+    image: zabbix/zabbix-web-nginx-pgsql:latest
+    restart: always
+    environment:
+      - DB_SERVER_HOST=zabbix-db
+      - POSTGRES_USER=zabbix
+      - POSTGRES_PASSWORD=zabbix
+      - ZBX_SERVER_HOST=zabbix-server
+    depends_on:
+      - zabbix-server
+    ports:
+      - "10500:8080"
+
+  zabbix-db:
+    image: postgres:latest
+    restart: always
+    environment:
+      - POSTGRES_USER=zabbix
+      - POSTGRES_PASSWORD=zabbix
+    volumes:
+      - ./zabbix_db:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
